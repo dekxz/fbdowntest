@@ -1,0 +1,36 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # packages: '' -> only accept licenses; the default 'tools' package no longer exists.
+      # Gradle then downloads platform 36 / build-tools on demand.
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      # No Gradle wrapper in the repo, so install Gradle directly (AGP 8.9 needs >= 8.11.1)
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FBDownloader-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
